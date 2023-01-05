@@ -1,5 +1,11 @@
 const Joi = require('joi')
-const { getHomeHandler, addBooksHandler } = require('./handler')
+const {
+  getHomeHandler,
+  addBooksHandler,
+  getAllBooksHandler,
+  getBooksByIdHandler,
+  editBooksByIdHandler
+} = require('./handler')
 const path = '/books'
 
 const routes = [
@@ -12,6 +18,21 @@ const routes = [
     method: 'POST',
     path: path,
     handler: addBooksHandler
+  },
+  {
+    method: 'GET',
+    path: path,
+    handler: getAllBooksHandler
+  },
+  {
+    method: 'GET',
+    path: `${path}/{id}`,
+    handler: getBooksByIdHandler
+  },
+  {
+    method: 'PUT',
+    path: `${path}/{id}`,
+    handler: editBooksByIdHandler
   }
 ]
 
