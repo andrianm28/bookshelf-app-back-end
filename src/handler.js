@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 const { nanoid } = require('nanoid')
 const books = require('./books')
 
@@ -23,12 +24,11 @@ const addBooksHandler = (request, h) => {
   } = request.payload
 
   const id = nanoid(16)
-  let finished = false
+  const finished = pageCount === readPage
   const insertedAt = new Date().toISOString()
   const updatedAt = insertedAt
-  readPage === pageCount ? (finished = true) : (finished = false)
 
-  if (name === undefined || name === '') {
+  if (!name) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal menambahkan buku. Mohon isi nama buku'
@@ -85,69 +85,30 @@ const addBooksHandler = (request, h) => {
 }
 
 const getAllBooksHandler = (request, h) => {
-  let filteredBooks = []
-  if (
-    !request.query.name &&
-    !request.query.reading &&
-    !request.query.finished
-  ) {
-    const response = h.response({
-      status: 'success',
-      message: 'berhasil',
-      data: {
-        books: books.map((book) => {
-          return {
-            id: book.id,
-            name: book.name,
-            publisher: book.publisher
-          }
-        })
-      }
-    })
-    response.code(200)
-    return response
+  const { name: qName, reading, finished } = request.query
+  let filteredBooks = books
+  if (qName) {
+    filteredBooks = filteredBooks.filter((book) =>
+      book.name.toLowerCase().includes(qName.toLowerCase()))
   }
-
-  if (request.query.reading === '1') {
-    filteredBooks = books.filter((book) => {
-      return book.reading === true
-    })
+  if (reading) {
+    filteredBooks = filteredBooks.filter(
+      (book) => book.reading === Boolean(Number(reading))
+    )
   }
-
-  if (request.query.reading === '0') {
-    filteredBooks = books.filter((book) => {
-      return book.reading === false
-    })
+  if (finished) {
+    filteredBooks = filteredBooks.filter(
+      (book) => book.finished === Boolean(Number(finished))
+    )
   }
-
-  if (request.query.finished === '1') {
-    filteredBooks = books.filter((book) => {
-      return book.finished === true
-    })
-  }
-
-  if (request.query.finished === '0') {
-    filteredBooks = books.filter((book) => {
-      return book.finished === false
-    })
-  }
-
-  if (request.query.name) {
-    filteredBooks = books.filter(book => {
-      return book.name.toLowerCase().includes(request.query.name.toLowerCase())
-    })
-  }
-
   const response = h.response({
     status: 'success',
     data: {
-      books: filteredBooks.map((book) => {
-        return {
-          id: book.id,
-          name: book.name,
-          publisher: book.publisher
-        }
-      })
+      books: filteredBooks.map(({ id, name, publisher }) => ({
+        id,
+        name,
+        publisher
+      }))
     }
   })
   response.code(200)
@@ -158,7 +119,7 @@ const getBooksByIdHandler = (request, h) => {
   const { id } = request.params
   const book = books.filter((b) => b.id === id)[0]
 
-  if (book == undefined) {
+  if (!book) {
     const response = h.response({
       status: 'fail',
       message: 'Buku tidak ditemukan'
@@ -189,7 +150,7 @@ const editBooksByIdHandler = (request, h) => {
   } = request.payload
   const updatedAt = new Date().toISOString()
 
-  if (name === undefined || name === '') {
+  if (!name) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal memperbarui buku. Mohon isi nama buku'
@@ -209,6 +170,7 @@ const editBooksByIdHandler = (request, h) => {
   }
 
   const index = books.findIndex((book) => book.id === id)
+  books.finished = pageCount === readPage
 
   if (index !== -1) {
     books[index] = {
